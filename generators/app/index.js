@@ -20,8 +20,8 @@ module.exports = class extends Generator {
     const prompts = [
       {
         type: "confirm",
-        name: "someAnswer",
-        message: "Would you like to enable this option?",
+        name: "circle",
+        message: "Do you want to generate circled icons?",
         default: true
       }
     ];
@@ -46,9 +46,18 @@ module.exports = class extends Generator {
     // Get icons (returns promise)
     btpServices = await btpServices.d.results.map(async element => {
       let svg = await got.get(element.Icon).then(response => {
-        return response.body;
+        return response;
       });
-      element.svg = svg;
+
+      element.extension = element.Icon.substr(
+        element.Icon.lastIndexOf(".") + 1
+      );
+      element.filename = element.Name.replaceAll("/", "")
+        .replaceAll(" ", "-")
+        .replaceAll(",", "-");
+      element.svg = svg.body;
+      element.binary = svg.rawBody;
+
       return element;
     });
 
@@ -61,49 +70,80 @@ module.exports = class extends Generator {
     btpServices.forEach(element => {
       console.log(element.Name);
 
-      // Remove potential doctype declaration
-      element.svg = element.svg.substring(element.svg.indexOf("<svg"));
-
-      if (
-        element.Name === "SAP Private Link Service" ||
-        element.Name === "SAP Data Retention Manager"
-      ) {
-        return;
+      if (this.props.circle === true && element.extension === "svg") {
+        this.generateCircledIcon(element);
       }
 
-      let window = createSVGWindow();
-      let document = window.document;
-
-      // Register window and document
-      registerWindow(window, document);
-
-      // Create canvas
-      let canvas = SVG(document.documentElement);
-      canvas.viewbox(0, 0, 56, 56);
-
-      // Add original icon to canvas
-      let group = canvas.group();
-      group.svg(element.svg);
-      group.scale(0.6);
-      group.center("50%", "50%");
-
-      // Create circle
-      let circle = canvas
-        .circle("46")
-        .stroke({ color: "#074d92", opacity: 1, width: 2 })
-        // .fill({ color: '#074d92', opacity: 0 })
-        .fill("none")
-        .center("50%", "50%");
-
-      // Create wrapper group
-      let circleGroup = canvas.group();
-      circleGroup.add(circle);
-      circleGroup.add(group);
-
-      this.fs.write(this.destinationPath(element.Name + ".svg"), canvas.svg());
-
-      // This.fs.write( this.destinationPath(element.Name+'.svg'), element.svg.toString());
+      if (element.extension === "svg") {
+        this.fs.write(
+          this.destinationPath(
+            "regular/" + element.filename + "." + element.extension
+          ),
+          element.svg
+        );
+      } else {
+        this.fs.write(
+          this.destinationPath(
+            "regular/" + element.filename + "." + element.extension
+          ),
+          element.binary
+        );
+      }
     });
+  }
+
+  generateCircledIcon(service) {
+    let svg;
+
+    if (service === undefined) {
+      return;
+    }
+
+    // Remove potential doctype declaration
+    svg = service?.svg.substring(service?.svg.indexOf("<svg"));
+
+    /* If (
+      name === "SAP Private Link Service" ||
+      name === "SAP Data Retention Manager"
+    ) {
+      return;
+    } */
+
+    let window = createSVGWindow();
+    let document = window.document;
+
+    // Register window and document
+    registerWindow(window, document);
+
+    // Create canvas
+    let canvas = SVG(document.documentElement);
+    canvas.viewbox(0, 0, 56, 56);
+
+    // Add original icon to canvas
+    let group = canvas.group();
+    group.svg(svg);
+    group.scale(0.6);
+    group.center("50%", "50%");
+
+    // Create circle
+    let circle = canvas
+      .circle("46")
+      .stroke({ color: "#074d92", opacity: 1, width: 2 })
+      // .fill({ color: '#074d92', opacity: 0 })
+      .fill("none")
+      .center("50%", "50%");
+
+    // Create wrapper group
+    let circleGroup = canvas.group();
+    circleGroup.add(circle);
+    circleGroup.add(group);
+
+    this.fs.write(
+      this.destinationPath(
+        "circled/" + service?.filename + "." + service?.extension
+      ),
+      canvas.svg()
+    );
   }
 
   install() {
