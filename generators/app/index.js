@@ -120,13 +120,29 @@ module.exports = class extends Generator {
     canvas.viewbox(0, 0, 56, 56);
 
     // Add original icon to canvas
-    let group = canvas.group();
+    /* let group = canvas.group();
     group.svg(svg);
-    group.scale(0.6);
     group.center("50%", "50%");
+    group.scale(0.6); */
+
+    let nested = canvas.nested();
+    nested.viewbox(0, 0, 56, 56);
+    nested.svg(svg);
+    nested.height(30);
+    nested.x(0).y("25%");
+
+    let icon = nested.first();
+    icon.height("100%");
+    icon.width("100%");
+
+    /* If(service?.filename === "PostgreSQL-on-SAP-BTP--hyperscaler-option"){
+      nested.scale(0.2);
+    } else {
+      nested.scale(0.6);
+    } */
 
     // Create circle
-    let circle = canvas
+    canvas
       .circle("46")
       .stroke({ color: "#074d92", opacity: 1, width: 2 })
       // .fill({ color: '#074d92', opacity: 0 })
@@ -134,9 +150,9 @@ module.exports = class extends Generator {
       .center("50%", "50%");
 
     // Create wrapper group
-    let circleGroup = canvas.group();
+    /* let circleGroup = canvas.group();
     circleGroup.add(circle);
-    circleGroup.add(group);
+    circleGroup.add(group); */
 
     this.fs.write(
       this.destinationPath(
