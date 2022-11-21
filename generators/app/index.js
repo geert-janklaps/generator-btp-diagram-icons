@@ -79,7 +79,8 @@ module.exports = class extends Generator {
       let path = "";
       console.log(element.Name);
 
-      if (this.props.circle === true && element.extension === "svg") {
+      // If (this.props.circle === true && element.extension === "svg") {
+      if (this.props.circle === true) {
         this.generateCircledIcon(element);
       }
 
@@ -117,7 +118,21 @@ module.exports = class extends Generator {
     // Add original icon to canvas (as nested svg)
     let nested = canvas.nested();
     nested.viewbox(0, 0, 56, 56);
-    nested.svg(svg);
+    if (service?.extension === "svg") {
+      // Embed original svg inside new svg
+      nested.svg(svg);
+    } else {
+      // Embed original icon as base64 encoded string inside the new svg
+      let image = nested.image();
+      image.attr(
+        "xlink:href",
+        `data:image/${service?.extension};base64,${service?.binary.toString(
+          "base64"
+        )}`,
+        "http://www.w3.org/1999/xlink"
+      );
+    }
+
     nested.height(30);
     nested.x(0).y("25%");
 
@@ -135,9 +150,9 @@ module.exports = class extends Generator {
       .center("50%", "50%");
 
     if (this.props.groupbycategory === true) {
-      path = `circled/${service?.Category}/${service?.filename}.${service?.extension}`;
+      path = `circled/${service?.Category}/${service?.filename}.svg`;
     } else {
-      path = `circled/${service?.filename}.${service?.extension}`;
+      path = `circled/${service?.filename}.svg`;
     }
 
     this.fs.write(this.destinationPath(path), canvas.svg());
