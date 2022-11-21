@@ -23,6 +23,12 @@ module.exports = class extends Generator {
         name: "circle",
         message: "Do you want to generate circled icons?",
         default: true
+      },
+      {
+        type: "confirm",
+        name: "groupbycategory",
+        message: "Do you want to group icons by category?",
+        default: true
       }
     ];
 
@@ -52,6 +58,8 @@ module.exports = class extends Generator {
       element.extension = element.Icon.substr(
         element.Icon.lastIndexOf(".") + 1
       );
+
+      element.Category = element.Category.replaceAll("/", "-");
       element.filename = element.Name.replaceAll("/", "")
         .replaceAll(" ", "-")
         .replaceAll(",", "-");
@@ -68,32 +76,26 @@ module.exports = class extends Generator {
 
     // Write files
     btpServices.forEach(element => {
+      let path = "";
       console.log(element.Name);
 
       if (this.props.circle === true && element.extension === "svg") {
         this.generateCircledIcon(element);
       }
 
-      if (element.extension === "svg") {
-        this.fs.write(
-          this.destinationPath(
-            "regular/" + element.filename + "." + element.extension
-          ),
-          element.svg
-        );
+      if (this.props.groupbycategory === true) {
+        path = `regular/${element.Category}/${element.filename}.${element.extension}`;
       } else {
-        this.fs.write(
-          this.destinationPath(
-            "regular/" + element.filename + "." + element.extension
-          ),
-          element.binary
-        );
+        path = `regular/${element.filename}.${element.extension}`;
       }
+
+      this.fs.write(this.destinationPath(path), element.svg);
     });
   }
 
   generateCircledIcon(service) {
     let svg;
+    let path = "";
 
     if (service === undefined) {
       return;
@@ -132,12 +134,13 @@ module.exports = class extends Generator {
       .fill("none")
       .center("50%", "50%");
 
-    this.fs.write(
-      this.destinationPath(
-        "circled/" + service?.filename + "." + service?.extension
-      ),
-      canvas.svg()
-    );
+    if (this.props.groupbycategory === true) {
+      path = `circled/${service?.Category}/${service?.filename}.${service?.extension}`;
+    } else {
+      path = `circled/${service?.filename}.${service?.extension}`;
+    }
+
+    this.fs.write(this.destinationPath(path), canvas.svg());
   }
 
   install() {
