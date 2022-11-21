@@ -102,13 +102,6 @@ module.exports = class extends Generator {
     // Remove potential doctype declaration
     svg = service?.svg.substring(service?.svg.indexOf("<svg"));
 
-    /* If (
-      name === "SAP Private Link Service" ||
-      name === "SAP Data Retention Manager"
-    ) {
-      return;
-    } */
-
     let window = createSVGWindow();
     let document = window.document;
 
@@ -119,27 +112,17 @@ module.exports = class extends Generator {
     let canvas = SVG(document.documentElement);
     canvas.viewbox(0, 0, 56, 56);
 
-    // Add original icon to canvas
-    /* let group = canvas.group();
-    group.svg(svg);
-    group.center("50%", "50%");
-    group.scale(0.6); */
-
+    // Add original icon to canvas (as nested svg)
     let nested = canvas.nested();
     nested.viewbox(0, 0, 56, 56);
     nested.svg(svg);
     nested.height(30);
     nested.x(0).y("25%");
 
+    // Get original svg and set size to 100% (width & height)
     let icon = nested.first();
     icon.height("100%");
     icon.width("100%");
-
-    /* If(service?.filename === "PostgreSQL-on-SAP-BTP--hyperscaler-option"){
-      nested.scale(0.2);
-    } else {
-      nested.scale(0.6);
-    } */
 
     // Create circle
     canvas
@@ -148,11 +131,6 @@ module.exports = class extends Generator {
       // .fill({ color: '#074d92', opacity: 0 })
       .fill("none")
       .center("50%", "50%");
-
-    // Create wrapper group
-    /* let circleGroup = canvas.group();
-    circleGroup.add(circle);
-    circleGroup.add(group); */
 
     this.fs.write(
       this.destinationPath(
