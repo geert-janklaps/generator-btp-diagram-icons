@@ -26,6 +26,12 @@ module.exports = class extends Generator {
       },
       {
         type: "confirm",
+        name: "sap",
+        message: "Do you want to generate SAP icons?",
+        default: true
+      },
+      {
+        type: "confirm",
         name: "groupbycategory",
         message: "Do you want to group icons by category?",
         default: true
@@ -42,6 +48,7 @@ module.exports = class extends Generator {
     const { got } = await import("got");
 
     // Get BTP services
+    this.log("Getting services from SAP discovery-center");
     let btpServices = await got
       .get(
         "https://discovery-center.cloud.sap/servicecatalog/Services?$orderby=Category,AdditionalCategories",
@@ -50,6 +57,7 @@ module.exports = class extends Generator {
       .json();
 
     // Get icons (returns promise)
+    this.log("Downloading service icons");
     btpServices = await btpServices.d.results.map(async element => {
       let svg = await got.get(element.Icon).then(response => {
         return response;
@@ -59,7 +67,7 @@ module.exports = class extends Generator {
         element.Icon.lastIndexOf(".") + 1
       );
 
-      element.Category = element.Category.replaceAll("/", "-");
+      element.Category = element.Category.replaceAll("/", "-").trim();
       element.filename = element.Name.replaceAll("/", "")
         .replaceAll(" ", "-")
         .replaceAll(",", "-");
@@ -77,21 +85,31 @@ module.exports = class extends Generator {
     // Write files
     btpServices.forEach(element => {
       let path = "";
-      console.log(element.Name);
+      this.log(`Processing: ${element.Name}`);
 
-      // If (this.props.circle === true && element.extension === "svg") {
       if (this.props.circle === true) {
-        this.generateCircledIcon(element);
+        element.circledsvg = this.generateCircledIcon(element);
       }
 
       if (this.props.groupbycategory === true) {
-        path = `regular/${element.Category}/${element.filename}.${element.extension}`;
+        path = `btp/regular/${element.Category}/${element.filename}.${element.extension}`;
       } else {
-        path = `regular/${element.filename}.${element.extension}`;
+        path = `btp/regular/${element.filename}.${element.extension}`;
       }
 
       this.fs.write(this.destinationPath(path), element.svg);
     });
+
+    // Generate SAP Icons
+    if (this.props.sap === true) {
+      const sapicons = require("@ui5/webcomponents-icons/dist/generated/assets/v5/SAP-icons.json");
+      const tnticons = require("@ui5/webcomponents-icons-tnt/dist/generated/assets/SAP-icons-TNT.json");
+      const businesssuiteicons = require("@ui5/webcomponents-icons-business-suite/dist/generated/assets/SAP-icons-business-suite.json");
+
+      this.generateSAPIcons(sapicons);
+      this.generateSAPIcons(tnticons);
+      this.generateSAPIcons(businesssuiteicons);
+    }
   }
 
   generateCircledIcon(service) {
@@ -150,12 +168,41 @@ module.exports = class extends Generator {
       .center("50%", "50%");
 
     if (this.props.groupbycategory === true) {
-      path = `circled/${service?.Category}/${service?.filename}.svg`;
+      path = `btp/circled/${service?.Category}/${service?.filename}.svg`;
     } else {
-      path = `circled/${service?.filename}.svg`;
+      path = `btp/circled/${service?.filename}.svg`;
     }
 
     this.fs.write(this.destinationPath(path), canvas.svg());
+
+    return canvas.svg();
+  }
+
+  generateSAPIcons(iconpackage) {
+    let path = "";
+
+    if (iconpackage === undefined) {
+      return;
+    }
+
+    Object.keys(iconpackage?.data).forEach(iconname => {
+      let icondata = iconpackage?.data[iconname];
+      let svgicon = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewbox="0 0 100 100" preserveAspectRatio="xMidYMid">
+                    <defs><style>.cls-1{fill:#595959;}</style></defs>
+                    <title>${iconname}</title>
+                    <g id="Layer_2" data-name="Layer 2"><g id="${iconname}">
+                    <path class="cls-1" d="${icondata.path}"></path>
+                    </g></g>
+                    </svg>`;
+
+      if (this.props.groupbycategory === true) {
+        path = `icons/${iconpackage?.collection}/${iconname}.svg`;
+      } else {
+        path = `icons/${iconname}.svg`;
+      }
+
+      this.fs.write(this.destinationPath(path), svgicon);
+    });
   }
 
   install() {
