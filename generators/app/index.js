@@ -5,10 +5,11 @@ const yosay = require("yosay");
 
 const { createSVGWindow } = require("svgdom");
 const { SVG, registerWindow } = require("@svgdotjs/svg.js");
+const fs = require("fs");
+const sizeOf = require("image-size");
 
 module.exports = class extends Generator {
   prompting() {
-    // Have Yeoman greet the user.
     this.log(
       yosay(
         `Welcome to the ${chalk.red(
@@ -97,7 +98,11 @@ module.exports = class extends Generator {
         path = `btp/regular/${element.filename}.${element.extension}`;
       }
 
-      this.fs.write(this.destinationPath(path), element.svg);
+      if (element.extension === "svg") {
+        this.fs.write(this.destinationPath(path), element.svg);
+      } else {
+        this.fs.write(this.destinationPath(path), element.binary);
+      }
     });
 
     // Generate SAP Icons
@@ -133,6 +138,14 @@ module.exports = class extends Generator {
     let canvas = SVG(document.documentElement);
     canvas.viewbox(0, 0, 56, 56);
 
+    // Create circle
+    canvas
+      .circle("46")
+      .stroke({ color: "#074d92", opacity: 1, width: 2 })
+      .fill({ color: "#FFFFFF", opacity: 1 })
+      // .fill("none")
+      .center("50%", "50%");
+
     // Add original icon to canvas (as nested svg)
     let nested = canvas.nested();
     nested.viewbox(0, 0, 56, 56);
@@ -159,14 +172,6 @@ module.exports = class extends Generator {
     icon.height("100%");
     icon.width("100%");
 
-    // Create circle
-    canvas
-      .circle("46")
-      .stroke({ color: "#074d92", opacity: 1, width: 2 })
-      // .fill({ color: '#074d92', opacity: 0 })
-      .fill("none")
-      .center("50%", "50%");
-
     if (this.props.groupbycategory === true) {
       path = `btp/circled/${service?.Category}/${service?.filename}.svg`;
     } else {
@@ -187,7 +192,7 @@ module.exports = class extends Generator {
 
     Object.keys(iconpackage?.data).forEach(iconname => {
       let icondata = iconpackage?.data[iconname];
-      let svgicon = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewbox="0 0 100 100" preserveAspectRatio="xMidYMid">
+      let svgicon = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 510 510" preserveAspectRatio="xMidYMid">
                     <defs><style>.cls-1{fill:#595959;}</style></defs>
                     <title>${iconname}</title>
                     <g id="Layer_2" data-name="Layer 2"><g id="${iconname}">
@@ -205,7 +210,85 @@ module.exports = class extends Generator {
     });
   }
 
-  install() {
-    // This.installDependencies();
+  async install() {
+    let libraries = [];
+
+    if (this.props.groupbycategory === true) {
+      fs.readdirSync(`${this.destinationPath()}/btp/regular`).forEach(
+        library => {
+          libraries.push({
+            library: `BTP - Regular - ${library}`,
+            path: `${this.destinationPath()}/btp/regular/${library}`
+          });
+        }
+      );
+
+      fs.readdirSync(`${this.destinationPath()}/btp/circled`).forEach(
+        library => {
+          libraries.push({
+            library: `BTP - Circled - ${library}`,
+            path: `${this.destinationPath()}/btp/circled/${library}`
+          });
+        }
+      );
+
+      fs.readdirSync(`${this.destinationPath()}/icons`).forEach(library => {
+        libraries.push({
+          library: `Icons - ${library}`,
+          path: `${this.destinationPath()}/icons/${library}`
+        });
+      });
+    } else {
+      libraries.push({
+        library: "BTP - Regular",
+        path: `${this.destinationPath()}/btp/regular`
+      });
+
+      libraries.push({
+        library: "BTP - Circled",
+        path: `${this.destinationPath()}/btp/circled`
+      });
+
+      libraries.push({
+        library: "Icons",
+        path: `${this.destinationPath()}/icons`
+      });
+    }
+
+    // Generate Draw.io library
+    libraries.forEach(library => {
+      let files = fs.readdirSync(library.path);
+      let drawiolibrary = [];
+
+      files.forEach(file => {
+        let extension = file.substring(file.lastIndexOf(".") + 1);
+        let name = file.substring(0, file.lastIndexOf("."));
+        let base64 = fs
+          .readFileSync(`${library.path}/${file}`)
+          .toString("base64");
+
+        let dimensions = sizeOf(`${library.path}/${file}`);
+
+        if (extension === "svg") {
+          extension = "svg+xml";
+        }
+
+        drawiolibrary.push({
+          data: `data:image/${extension};base64,${base64}`,
+          title: name,
+          aspect: "fixed",
+          w: dimensions.width,
+          h: dimensions.height
+        });
+      });
+
+      let xml = `<mxlibrary>${JSON.stringify(drawiolibrary)}</mxlibrary>`;
+      this.fs.write(
+        this.destinationPath(`libraries/draw-io/${library.library}.xml`),
+        xml
+      );
+
+      drawiolibrary = [];
+    });
   }
 };
