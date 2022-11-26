@@ -1,6 +1,6 @@
 {
   "name": "generator-btp-diagram-icons",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Generate SAP Business Technology Platform (BTP) diagram icons",
   "homepage": "",
   "author": {
@@ -85,6 +85,12 @@
     "test": "jest",
     "start": "npx yo btp-diagram-icons"
   },
-  "repository": "https://github.com/geert-janklaps/generator-btp-diagram-icons.git",
+  "bugs": {
+    "url": "https://github.com/geert-janklaps/generator-btp-diagram-icons/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geert-janklaps/generator-btp-diagram-icons.git"
+  },
   "license": "MIT"
 }
