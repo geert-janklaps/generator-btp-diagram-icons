@@ -234,7 +234,7 @@ module.exports = class extends Generator {
 
       fs.readdirSync(`${this.destinationPath()}/icons`).forEach(library => {
         libraries.push({
-          library: `Icons - ${library}`,
+          library: `SAP Icons - ${library}`,
           path: `${this.destinationPath()}/icons/${library}`
         });
       });
@@ -250,7 +250,7 @@ module.exports = class extends Generator {
       });
 
       libraries.push({
-        library: "Icons",
+        library: "SAP Icons",
         path: `${this.destinationPath()}/icons`
       });
     }
