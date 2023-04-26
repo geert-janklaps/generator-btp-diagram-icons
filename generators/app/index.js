@@ -108,8 +108,8 @@ module.exports = class extends Generator {
     // Generate SAP Icons
     if (this.props.sap === true) {
       const sapicons = require("@ui5/webcomponents-icons/dist/generated/assets/v5/SAP-icons.json");
-      const tnticons = require("@ui5/webcomponents-icons-tnt/dist/generated/assets/SAP-icons-TNT.json");
-      const businesssuiteicons = require("@ui5/webcomponents-icons-business-suite/dist/generated/assets/SAP-icons-business-suite.json");
+      const tnticons = require("@ui5/webcomponents-icons-tnt/dist/generated/assets/v3/SAP-icons-TNT.json");
+      const businesssuiteicons = require("@ui5/webcomponents-icons-business-suite/dist/generated/assets/v2/SAP-icons-business-suite.json");
 
       this.generateSAPIcons(sapicons);
       this.generateSAPIcons(tnticons);
